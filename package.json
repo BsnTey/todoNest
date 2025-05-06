@@ -1,0 +1,8 @@
+{
+  "name": "my-kirill",
+  "version": "1.0.0",
+  "scripts": {},
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}
