@@ -11,7 +11,6 @@ import {
   ChangePasswordDto,
   CreateUserDto,
   LoginUserDto,
-  LogoutUserDto,
   RestorePasswordDto,
   UpdateProfileDto,
 } from './dto';
@@ -34,8 +33,8 @@ export class UserController {
 
   @Post('logout')
   @HttpCode(200)
-  async logoutUser(@Body() user: LogoutUserDto): Promise<LogoutUserDto> {
-    return this.userService.logoutUser(user);
+  async logoutUser(id: string) {
+    return this.userService.logoutUser(id);
   }
 
   @Post('refresh')

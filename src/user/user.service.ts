@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { ChangePasswordDto } from './dto/changePassword-user.dto';
-import { CreateUserDto } from './dto/create-user.dto';
-import { LoginUserDto } from './dto/login-user.dto';
-import { LogoutUserDto } from './dto/logout-user.dto';
-import { RestorePasswordDto } from './dto/restorePassword-user.dto';
-import { UpdateProfileDto } from './dto/update-user.dto';
+import {
+  ChangePasswordDto,
+  CreateUserDto,
+  LoginUserDto,
+  RestorePasswordDto,
+  UpdateProfileDto,
+} from './dto';
 
 @Injectable()
 export class UserService {
@@ -20,9 +21,9 @@ export class UserService {
     return userDto;
   }
 
-  async logoutUser(userDto: LogoutUserDto): Promise<LogoutUserDto> {
-    console.log(`Пользователь ${userDto.email} вышел из системы`);
-    return userDto;
+  async logoutUser(id: string): Promise<boolean> {
+    console.log(`Пользователь с id: ${id} вышел из системы`);
+    return true;
   }
 
   async refreshTokens(userDto: LoginUserDto): Promise<LoginUserDto> {
