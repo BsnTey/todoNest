@@ -1,72 +1,79 @@
 import { Injectable } from '@nestjs/common';
-import { ChangePasswordDto } from './dto/changePassword-user.dto';
-import { CreateUserDto } from './dto/create-user.dto';
-import { LoginUserDto } from './dto/login-user.dto';
-import { LogoutUserDto } from './dto/logout-user.dto';
-import { RestorePasswordDto } from './dto/restorePassword-user.dto';
-import { UpdateProfileDto } from './dto/update-user.dto';
+import { PinoService } from '../logger';
+import {
+  ChangePasswordDto,
+  CreateUserDto,
+  LoginUserDto,
+  RestorePasswordDto,
+  UpdateProfileDto,
+} from './dto';
 
 @Injectable()
 export class UserService {
+  private readonly ctx = UserService.name;
+
+  constructor(private readonly logger: PinoService) {}
+
   async registerUser(userDto: CreateUserDto): Promise<CreateUserDto> {
-    console.log(
+    this.logger.log(
       `Пользователь ${userDto.name} с email ${userDto.email} успешно зарегистрирован`,
+      this.ctx,
     );
     return userDto;
   }
 
   async loginUser(userDto: LoginUserDto): Promise<LoginUserDto> {
-    console.log(`Пользователь ${userDto.email} авторизован`);
+    this.logger.log(`Пользователь ${userDto.email} авторизован`, this.ctx);
     return userDto;
   }
 
-  async logoutUser(userDto: LogoutUserDto): Promise<LogoutUserDto> {
-    console.log(`Пользователь ${userDto.email} вышел из системы`);
-    return userDto;
+  async logoutUser(id: string): Promise<boolean> {
+    this.logger.log(`Пользователь с id: ${id} вышел из системы`, this.ctx);
+    return true;
   }
 
   async refreshTokens(userDto: LoginUserDto): Promise<LoginUserDto> {
-    console.log(`Созданы токены для ${userDto.email}`);
+    this.logger.log(`Созданы токены для ${userDto.email}`, this.ctx);
     return userDto;
   }
 
   async restorePassword(data: RestorePasswordDto): Promise<RestorePasswordDto> {
-    console.log(`Пароль восстановлен для ${data.email}`);
+    this.logger.log(`Пароль восстановлен для ${data.email}`, this.ctx);
     return data;
   }
 
   async blockUser(id: string): Promise<boolean> {
-    console.log(`Пользователь ${id} заблокирован`);
+    this.logger.log(`Пользователь ${id} заблокирован`, this.ctx);
     return true;
   }
 
   async unblockUser(id: string): Promise<boolean> {
-    console.log(`Пользователь ${id} разблокирован`);
+    this.logger.log(`Пользователь ${id} разблокирован`, this.ctx);
     return true;
   }
 
   async getAllUsers(): Promise<[]> {
-    console.log('Получение всего списка пользователей');
+    this.logger.log(`Получение всего списка пользователей`, this.ctx);
     return [];
   }
 
   async getUserProfile(id: string): Promise<string> {
-    console.log(`Запрос профиля для ${id}`);
+    this.logger.log(`Запрос профиля для ${id}`, this.ctx);
     return id;
   }
 
   async getTelegramLink(): Promise<string> {
-    console.log('Запрос телеграм ссылки');
+    this.logger.log(`Запрос телеграм ссылки`, this.ctx);
     return 'https://t.me/xxxx';
   }
 
   async updateProfile(updateDto: UpdateProfileDto): Promise<UpdateProfileDto> {
-    console.log(`Обновление профиля для ${updateDto.name}`);
+    this.logger.log(`Обновление профиля для ${updateDto.name}`, this.ctx);
     return updateDto;
   }
 
   async changePassword(data: ChangePasswordDto): Promise<ChangePasswordDto> {
-    console.log(`Пароль изменен`);
+    this.logger.log(`Пароль изменен`, this.ctx);
     return data;
   }
 }
