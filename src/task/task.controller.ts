@@ -4,11 +4,14 @@ import {
   Delete,
   Get,
   HttpCode,
+  NotFoundException,
   Param,
   Post,
   Put,
+  Request,
 } from '@nestjs/common';
 import { ApiOperation } from '@nestjs/swagger';
+import { Task } from '../entity/task.entity';
 import { CreateTaskDto, UpdateTaskDto } from './dto';
 import { TaskService } from './task.service';
 
@@ -18,36 +21,46 @@ export class TaskController {
 
   @ApiOperation({ summary: 'Создать задание' })
   @Post()
-  async createTask(@Body() task: CreateTaskDto): Promise<CreateTaskDto> {
-    return this.taskService.createTask(task);
+  async createTask(
+    @Body() task: CreateTaskDto,
+    @Request() req: Request,
+  ): Promise<Task> {
+    // добавить юзера из jwt
+    return this.taskService.createTask(task, 'eqeqe');
   }
 
   @ApiOperation({ summary: 'Получить все задания' })
   @Get()
-  async getAllTasks(): Promise<CreateTaskDto[]> {
+  async getAllTasks(): Promise<Task[]> {
     return this.taskService.getAllTasks();
   }
 
   @ApiOperation({ summary: 'Получить задание по ID' })
   @Get(':id')
-  async getTask(@Param('id') id: string): Promise<{ id: string }> {
-    return this.taskService.getTask(id);
+  async getTask(@Param('id') id: string): Promise<Task> {
+    const task = await this.taskService.getTask(id);
+    if (!task) {
+      throw new NotFoundException(`Задача с ID: ${id} не найдена`);
+    }
+    return task;
   }
 
   @ApiOperation({
     summary: 'Получить задания, созданные текущим пользователем',
   })
   @Get('my/authored')
-  async getMyAuthoredTasks(): Promise<CreateTaskDto[]> {
-    return this.taskService.getMyAuthoredTasks();
+  async getMyAuthoredTasks(): Promise<Task[]> {
+    // добавить юзера из jwt
+    return this.taskService.getMyAuthoredTasks('dawdqwd');
   }
 
   @ApiOperation({
     summary: 'Получить задания, назначенные текущему пользователю',
   })
   @Get('my/assigned')
-  async getMyAssignedTasks(): Promise<CreateTaskDto[]> {
-    return this.taskService.getMyAssignedTasks();
+  async getMyAssignedTasks(): Promise<Task[]> {
+    // добавить юзера из jwt
+    return this.taskService.getMyAssignedTasks('dawdqwd');
   }
 
   @ApiOperation({ summary: 'Обновить задание по ID' })
@@ -55,14 +68,15 @@ export class TaskController {
   async updateTask(
     @Param('id') id: string,
     @Body() task: UpdateTaskDto,
-  ): Promise<UpdateTaskDto> {
+  ): Promise<Task | null> {
     return this.taskService.updateTask(id, task);
   }
 
   @ApiOperation({ summary: 'Удалить задание по ID' })
   @Delete(':id')
   @HttpCode(200)
-  async deleteTask(@Param('id') id: string): Promise<boolean> {
-    return this.taskService.deleteTask(id);
+  async deleteTask(@Param('id') id: string): Promise<{ deleted: boolean }> {
+    const deleted = await this.taskService.deleteTask(id);
+    return { deleted };
   }
 }
