@@ -1,4 +1,10 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { TaskSeverity, TaskStatus } from '../common';
 import { Task, TaskCreationAttrs } from '../entity/task.entity';
 import { UserService } from '../user/user.service';
 import { CreateTaskDto, UpdateTaskDto } from './dto';
@@ -13,17 +19,24 @@ export class TaskService {
     private userService: UserService,
   ) {}
 
-  async createTask(taskDto: CreateTaskDto, userId: string): Promise<Task> {
+  async createTask(taskDto: CreateTaskDto, creatorId: string): Promise<Task> {
     const { title, description, status, severity, assigneeId } = taskDto;
+
     if (assigneeId) {
-      const assigneeExist = await this.userService.getUserProfile(assigneeId);
-      if (!assigneeExist) {
-        this.logger.warn(
-          `Попытка назначить задачу несуществующему пользователю: ${assigneeId}`,
-        );
-        throw new NotFoundException(
-          `Исполнитель с ID "${assigneeId}" не найден.`,
-        );
+      try {
+        await this.userService.getUserProfile(assigneeId);
+      } catch (e) {
+        if (e instanceof NotFoundException) {
+          throw new NotFoundException(e.message);
+        } else if (e instanceof Error) {
+          throw new InternalServerErrorException(
+            `Произошла внутренняя ошибка при проверке исполнителя: ${e.message}`,
+          );
+        } else {
+          throw new InternalServerErrorException(
+            `Произошла непредвиденная ошибка: ${String(e)}`,
+          );
+        }
       }
     }
 
@@ -32,24 +45,47 @@ export class TaskService {
       description,
       status,
       severity,
-      creatorId: userId,
+      creatorId,
       assigneeId: assigneeId ?? null,
     };
 
     const task = await this.taskRepository.create(newTaskData);
     this.logger.log(
-      `Задача "${task.title}" с ID: ${task.id} создана пользователем ${userId}`,
+      `Задача "${task.title}" с ID: ${task.id} создана пользователем ${creatorId}`,
     );
     return task;
   }
 
-  async getAllTasks(): Promise<Task[]> {
-    this.logger.log(`Получение всех задач`);
-    return this.taskRepository.findAll();
+  async findAllWithFilters(
+    userId: string | undefined,
+    limit: number,
+    offset: number,
+    search: string,
+    status: TaskStatus | undefined,
+    severity: TaskSeverity | undefined,
+  ): Promise<Task[]> {
+    this.logger.log(
+      `Получение всех задач для пользователя ${userId} с limit: ${limit}, offset: ${offset}, search: '${search}', status: '${status}', severity: '${severity}'`,
+    );
+    return this.taskRepository.findAllWithFilters({
+      userId,
+      limit,
+      offset,
+      search,
+      status,
+      severity,
+    });
   }
 
-  async getTask(id: string): Promise<Task | null> {
+  async getTask(id: string): Promise<Task> {
     this.logger.log(`Получение задания с ID: ${id}`);
+    const task = await this.findTask(id);
+    if (!task) throw new NotFoundException(`Задания с ID: ${id} не существует`);
+    return task;
+  }
+
+  async findTask(id: string): Promise<Task | null> {
+    this.logger.log(`Найти задание с ID: ${id}`);
     return this.taskRepository.findById(id);
   }
 
@@ -82,6 +118,6 @@ export class TaskService {
     }
     this.logger.log(`Удаление задачи с ID: ${id}`);
     const deletedCount = await this.taskRepository.delete(id);
-    return deletedCount > 0;
+    return Boolean(deletedCount);
   }
 }

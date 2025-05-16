@@ -17,6 +17,7 @@ export const sequelizeProvider: Provider<Sequelize> = {
     });
 
     await sequelize.authenticate();
+    await sequelize.sync({ alter: true });
     const logger = new Logger('Sequelize');
 
     logger.log('Successfully connected to the PostgreSQL');

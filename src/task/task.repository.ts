@@ -1,21 +1,42 @@
-import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/sequelize';
+import { Inject, Injectable } from '@nestjs/common';
+import { Op, WhereOptions } from 'sequelize';
+import { Sequelize } from 'sequelize-typescript';
+import { SEQUELIZE } from '../database';
 import { Task, TaskCreationAttrs } from '../entity/task.entity';
 import { UpdateTaskDto } from './dto';
+import { FindAllFilters } from './interface';
 
 @Injectable()
 export class TaskRepository {
-  constructor(
-    @InjectModel(Task)
-    private taskModel: typeof Task,
-  ) {}
+  private readonly taskModel: typeof Task;
+
+  constructor(@Inject(SEQUELIZE) private sequelizeInstance: Sequelize) {
+    this.taskModel = this.sequelizeInstance.model(Task) as typeof Task;
+  }
 
   async create(taskData: TaskCreationAttrs): Promise<Task> {
     return this.taskModel.create(taskData);
   }
 
-  async findAll(): Promise<Task[]> {
-    return this.taskModel.findAll();
+  async findAllWithFilters(filters: FindAllFilters): Promise<Task[]> {
+    const { userId, limit, offset, search, status, severity } = filters;
+    const where: WhereOptions<Task> = {};
+    if (search) {
+      where.title = {
+        [Op.iLike]: `%${search}%`,
+      };
+    }
+
+    if (userId) where.id = userId;
+    if (status) where.status = status;
+    if (severity) where.severity = severity;
+
+    return this.taskModel.findAll({
+      where,
+      limit,
+      offset,
+      order: [['createdAt', 'DESC']],
+    });
   }
 
   async findById(id: string): Promise<Task | null> {

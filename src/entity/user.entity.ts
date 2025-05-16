@@ -8,9 +8,20 @@ import {
   Table,
   UpdatedAt,
 } from 'sequelize-typescript';
+import { UserRole } from '../common';
 import { Task } from './task.entity';
 
-@Table
+export interface UserCreationAttrs {
+  email: string;
+  password: string;
+  name?: string;
+  birthday?: Date;
+  role: UserRole;
+  isBan: boolean;
+  refreshToken: string | null;
+}
+
+@Table({ tableName: 'users' })
 export class User extends Model {
   @Column({
     type: DataType.UUID,
@@ -42,6 +53,24 @@ export class User extends Model {
     type: DataType.DATE,
   })
   birthday: Date;
+
+  @Column({
+    type: DataType.STRING,
+  })
+  role: UserRole;
+
+  @Column({
+    type: DataType.BOOLEAN,
+    defaultValue: false,
+  })
+  isBan: boolean;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+    defaultValue: null,
+  })
+  refreshToken: string | null;
 
   @HasMany(() => Task, 'creatorId')
   createdTasks: Task[];

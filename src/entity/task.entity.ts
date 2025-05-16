@@ -3,7 +3,6 @@ import {
   Column,
   CreatedAt,
   DataType,
-  ForeignKey,
   Model,
   Table,
   UpdatedAt,
@@ -20,7 +19,7 @@ export interface TaskCreationAttrs {
   assigneeId: string | null;
 }
 
-@Table
+@Table({ tableName: 'tasks' })
 export class Task extends Model<Task, TaskCreationAttrs> {
   @Column({
     type: DataType.UUID,
@@ -42,30 +41,28 @@ export class Task extends Model<Task, TaskCreationAttrs> {
   description: string;
 
   @Column({
-    type: DataType.ENUM(...Object.values(TaskStatus)),
+    type: DataType.STRING,
     allowNull: false,
   })
   status: TaskStatus;
 
   @Column({
-    type: DataType.ENUM(...Object.values(TaskSeverity)),
+    type: DataType.STRING,
     allowNull: false,
   })
   severity: TaskSeverity;
 
-  @ForeignKey(() => User)
   @Column({
     type: DataType.UUID,
     allowNull: false,
   })
   creatorId: string;
 
-  @ForeignKey(() => User)
   @Column({
     type: DataType.UUID,
     allowNull: true,
   })
-  assigneeId: string | null;
+  assigneeId: string;
 
   @BelongsTo(() => User, 'creatorId')
   creator: User;

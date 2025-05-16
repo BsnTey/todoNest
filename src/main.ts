@@ -1,3 +1,4 @@
+import fastifyCookie from '@fastify/cookie';
 import { NestFactory } from '@nestjs/core';
 import {
   FastifyAdapter,
@@ -26,10 +27,12 @@ const bootstrap = async () => {
     { logger },
   );
 
+  await app.register(fastifyCookie);
+
   bootstrapSwagger(app);
   bootstrapPipes(app);
 
-  await app.listen(appConfig.port, '0.0.0.0');
+  await app.listen(appConfig.port);
 
   const context = 'Bootstrap';
   logger.log(
