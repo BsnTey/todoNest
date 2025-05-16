@@ -1,79 +1,71 @@
-import { Injectable } from '@nestjs/common';
-import { PinoService } from '../logger';
-import {
-  ChangePasswordDto,
-  CreateUserDto,
-  LoginUserDto,
-  RestorePasswordDto,
-  UpdateProfileDto,
-} from './dto';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { OptionalUser } from '../common/types/user.interface';
+import { User, UserCreationAttrs } from '../entity/user.entity';
+import { UpdateProfileDto } from './dto';
+import { UserRepository } from './user.repository';
 
 @Injectable()
 export class UserService {
-  private readonly ctx = UserService.name;
+  private readonly logger = new Logger(UserService.name);
 
-  constructor(private readonly logger: PinoService) {}
+  constructor(private userRepository: UserRepository) {}
 
-  async registerUser(userDto: CreateUserDto): Promise<CreateUserDto> {
-    this.logger.log(
-      `Пользователь ${userDto.name} с email ${userDto.email} успешно зарегистрирован`,
-      this.ctx,
-    );
-    return userDto;
-  }
-
-  async loginUser(userDto: LoginUserDto): Promise<LoginUserDto> {
-    this.logger.log(`Пользователь ${userDto.email} авторизован`, this.ctx);
-    return userDto;
-  }
-
-  async logoutUser(id: string): Promise<boolean> {
-    this.logger.log(`Пользователь с id: ${id} вышел из системы`, this.ctx);
-    return true;
-  }
-
-  async refreshTokens(userDto: LoginUserDto): Promise<LoginUserDto> {
-    this.logger.log(`Созданы токены для ${userDto.email}`, this.ctx);
-    return userDto;
-  }
-
-  async restorePassword(data: RestorePasswordDto): Promise<RestorePasswordDto> {
-    this.logger.log(`Пароль восстановлен для ${data.email}`, this.ctx);
-    return data;
+  async create(createUser: UserCreationAttrs): Promise<User> {
+    return this.userRepository.create(createUser);
   }
 
   async blockUser(id: string): Promise<boolean> {
-    this.logger.log(`Пользователь ${id} заблокирован`, this.ctx);
+    this.logger.log(`Пользователь ${id} заблокирован`);
     return true;
   }
 
   async unblockUser(id: string): Promise<boolean> {
-    this.logger.log(`Пользователь ${id} разблокирован`, this.ctx);
+    this.logger.log(`Пользователь ${id} разблокирован`);
     return true;
   }
 
   async getAllUsers(): Promise<[]> {
-    this.logger.log(`Получение всего списка пользователей`, this.ctx);
+    this.logger.log(`Получение всего списка пользователей`);
     return [];
   }
 
-  async getUserProfile(id: string): Promise<string> {
-    this.logger.log(`Запрос профиля для ${id}`, this.ctx);
-    return id;
+  async findById(userId: string): Promise<User | null> {
+    this.logger.log(`Поиск профиля для ${userId}`);
+    return this.userRepository.findById(userId);
+  }
+
+  async findByEmail(email: string): Promise<User | null> {
+    this.logger.log(`Поиск профиля по Email: ${email}`);
+    return this.userRepository.findByEmail(email);
+  }
+
+  async getUserProfile(userId: string): Promise<User> {
+    this.logger.log(`Запрос профиля для ${userId}`);
+    const user = await this.findById(userId);
+    if (!user) throw new NotFoundException('Пользователь не найден');
+    return user;
   }
 
   async getTelegramLink(): Promise<string> {
-    this.logger.log(`Запрос телеграм ссылки`, this.ctx);
+    this.logger.log(`Запрос телеграм ссылки`);
     return 'https://t.me/xxxx';
   }
 
   async updateProfile(updateDto: UpdateProfileDto): Promise<UpdateProfileDto> {
-    this.logger.log(`Обновление профиля для ${updateDto.name}`, this.ctx);
+    this.logger.log(`Обновление профиля для ${updateDto.name}`);
     return updateDto;
   }
 
-  async changePassword(data: ChangePasswordDto): Promise<ChangePasswordDto> {
-    this.logger.log(`Пароль изменен`, this.ctx);
-    return data;
+  async update(
+    userId: string,
+    updateUser: OptionalUser,
+  ): Promise<[number, User]> {
+    this.logger.log(`Обновление пользователя с ID: ${userId}`);
+    const [count, [updatedUser]] = await this.userRepository.update(
+      userId,
+      updateUser,
+    );
+
+    return [count, updatedUser];
   }
 }

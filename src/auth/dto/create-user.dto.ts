@@ -1,4 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import {
   IsDateString,
   IsEmail,
@@ -10,6 +11,7 @@ import {
 export class CreateUserDto {
   @ApiProperty({ example: 'user@example.com' })
   @IsEmail()
+  @Transform(({ value }) => value?.toLowerCase())
   email: string;
 
   @ApiProperty({ example: 'qwerty123' })
@@ -17,13 +19,13 @@ export class CreateUserDto {
   @MinLength(5)
   password: string;
 
-  @ApiProperty({ example: 'Ivan' })
+  @ApiPropertyOptional({ example: 'Ivan' })
   @IsString()
   @IsOptional()
   name?: string;
 
-  @ApiProperty({ example: '1990-01-01' })
+  @ApiPropertyOptional({ example: '1990-01-01' })
   @IsDateString()
   @IsOptional()
-  birthday?: string;
+  birthday?: Date;
 }
