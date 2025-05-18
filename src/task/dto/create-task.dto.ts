@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsString, MinLength } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
 import { TaskSeverity, TaskStatus } from '../../common';
 
 export class CreateTaskDto {
@@ -23,7 +23,8 @@ export class CreateTaskDto {
   @IsEnum(TaskSeverity)
   severity: TaskSeverity;
 
-  @ApiProperty({ example: 'qdwdq-dasda-asda-dasda' })
+  @ApiPropertyOptional({ example: 'qdwdq-dasda-asda-dasda' })
   @IsString()
-  assignee: string;
+  @IsOptional()
+  assigneeId?: string;
 }

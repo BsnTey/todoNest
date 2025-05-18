@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import { IsInt, Max, Min } from 'class-validator';
 import { NestedConfigDto } from '../../decorators';
+import { JWTConfigDto } from './jwt.config.dto';
 import { PostgresConfigDto } from './postgres.config.dto';
 
 export class AppConfigDto {
@@ -12,4 +13,7 @@ export class AppConfigDto {
 
   @NestedConfigDto(PostgresConfigDto)
   readonly postgres: PostgresConfigDto;
+
+  @NestedConfigDto(JWTConfigDto)
+  readonly jwt: JWTConfigDto;
 }

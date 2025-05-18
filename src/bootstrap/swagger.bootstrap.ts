@@ -8,6 +8,15 @@ export const bootstrapSwagger = (app: INestApplication) => {
   const config = new DocumentBuilder()
     .setTitle(title)
     .setVersion(APP_VERSION)
+    .addBearerAuth(
+      {
+        type: 'http',
+        in: 'header',
+        name: 'Authorization',
+        description: 'JWT токен с Bearer (например Bearer токен)',
+      },
+      'access-token',
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

@@ -12,3 +12,14 @@ export enum TaskSeverity {
   HIGH = 'HIGH',
   CRITICAL = 'CRITICAL',
 }
+
+export enum UserRole {
+  GUEST = 'GUEST',
+  USER = 'USER',
+  ADMIN = 'ADMIN',
+}
+
+export enum TokensStrategy {
+  ACCESS_TOKEN = 'accessToken',
+  REFRESH_TOKEN = 'refreshToken',
+}
