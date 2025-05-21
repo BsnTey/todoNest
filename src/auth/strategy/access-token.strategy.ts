@@ -3,26 +3,24 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { TokensStrategy } from '../../common';
 import { appConfig } from '../../config';
+import { User } from '../../entity/user.entity';
+import { UserService } from '../../user/user.service';
 import { IJWTPayload } from '../types/auth.interface';
-import { UserContext } from '../types/user.context.interface';
 
 @Injectable()
 export class AccessTokenStrategy extends PassportStrategy(
   Strategy,
   TokensStrategy.ACCESS_TOKEN,
 ) {
-  constructor() {
+  constructor(private readonly userService: UserService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: appConfig.jwt.jwtAccessSecret,
+      secretOrKey: appConfig.jwt.accessSecret,
     });
   }
 
-  validate(payload: IJWTPayload): UserContext {
-    return {
-      userId: payload.id,
-      userRole: payload.role,
-    };
+  async validate(payload: IJWTPayload): Promise<User> {
+    return this.userService.getUserById(payload.id);
   }
 }

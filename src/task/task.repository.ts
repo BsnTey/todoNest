@@ -1,37 +1,41 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Op, WhereOptions } from 'sequelize';
+import { Op } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 import { SEQUELIZE } from '../database';
 import { Task, TaskCreationAttrs } from '../entity/task.entity';
-import { UpdateTaskDto } from './dto';
-import { FindAllFilters } from './interface';
+import { TasksQueryDto, UpdateTaskDto } from './dto';
 
 @Injectable()
 export class TaskRepository {
   private readonly taskModel: typeof Task;
 
   constructor(@Inject(SEQUELIZE) private sequelizeInstance: Sequelize) {
-    this.taskModel = this.sequelizeInstance.model(Task) as typeof Task;
+    this.taskModel = this.sequelizeInstance.getRepository(Task);
   }
 
   async create(taskData: TaskCreationAttrs): Promise<Task> {
     return this.taskModel.create(taskData);
   }
 
-  async findAllWithFilters(filters: FindAllFilters): Promise<Task[]> {
-    const { userId, limit, offset, search, status, severity } = filters;
-    const where: WhereOptions<Task> = {};
+  async findAllWithFilters(
+    query: TasksQueryDto,
+  ): Promise<{ count: number; rows: Task[] }> {
+    const { limit, offset, search, status, severity, creatorId, assigneeId } =
+      query;
+    const where: Record<string | symbol, unknown> = {};
     if (search) {
-      where.title = {
-        [Op.iLike]: `%${search}%`,
-      };
+      where[Op.or] = [
+        { title: { [Op.iLike]: `%${search}%` } },
+        { description: { [Op.iLike]: `%${search}%` } },
+      ];
     }
 
-    if (userId) where.id = userId;
+    if (creatorId) where.creatorId = creatorId;
+    if (assigneeId) where.id = assigneeId;
     if (status) where.status = status;
     if (severity) where.severity = severity;
 
-    return this.taskModel.findAll({
+    return this.taskModel.findAndCountAll({
       where,
       limit,
       offset,
@@ -43,17 +47,10 @@ export class TaskRepository {
     return this.taskModel.findByPk(id);
   }
 
-  async findByCreatorId(creatorId: string): Promise<Task[]> {
-    return this.taskModel.findAll({ where: { creatorId } });
-  }
-
-  async findByAssigneeId(assigneeId: string): Promise<Task[]> {
-    return this.taskModel.findAll({ where: { assigneeId } });
-  }
-
   async update(id: string, dto: UpdateTaskDto): Promise<[number, Task[]]> {
+    const { title, description, status, severity, assigneeId } = dto;
     return this.taskModel.update(
-      { ...dto },
+      { title, description, status, severity, assigneeId },
       { where: { id }, returning: true },
     );
   }

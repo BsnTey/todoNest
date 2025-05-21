@@ -3,17 +3,17 @@ import { IsNotEmpty, IsString } from 'class-validator';
 export class JWTConfigDto {
   @IsString()
   @IsNotEmpty()
-  readonly jwtAccessSecret: string;
+  readonly accessSecret: string;
 
   @IsString()
   @IsNotEmpty()
-  readonly jwtRefreshSecret: string;
+  readonly refreshSecret: string;
 
   @IsString()
   @IsNotEmpty()
-  readonly jwtAccessExpirationTime: string;
+  readonly accessExpirationTime: string;
 
   @IsString()
   @IsNotEmpty()
-  readonly jwtRefreshExpirationTime: string;
+  readonly refreshExpirationTime: string;
 }

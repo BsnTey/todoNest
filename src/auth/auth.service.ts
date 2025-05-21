@@ -5,22 +5,20 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { compare, genSalt, hash } from 'bcrypt';
+import { CacheService } from '../cache/cache.service';
 import { UserRole } from '../common';
 import { appConfig } from '../config';
+import { User as UserModel } from '../entity/user.entity';
 import { UserService } from '../user/user.service';
-import { CreateUserDto, LoginUserDto } from './dto';
+import { ChangePasswordDto, CreateUserDto, LoginUserDto } from './dto';
 import { CredentialsToken, IJWTPayload } from './types/auth.interface';
 
 @Injectable()
 export class AuthService {
-  private jwtAccessSecret = appConfig.jwt.jwtAccessSecret;
-  private jwtAccessExpirationTime = appConfig.jwt.jwtAccessExpirationTime;
-  private jwtRefreshSecret = appConfig.jwt.jwtRefreshSecret;
-  private jwtRefreshExpirationTime = appConfig.jwt.jwtRefreshExpirationTime;
-
   constructor(
     private userService: UserService,
     private jwtService: JwtService,
+    private readonly cacheService: CacheService,
   ) {}
 
   async register(
@@ -35,14 +33,10 @@ export class AuthService {
       ...createUserDto,
       password: hash,
       role,
-      isBan: false,
-      refreshToken: null,
+      isActive: true,
     });
 
-    return this.createAndUpdateTokens({
-      id: newUser.id,
-      role: newUser.role,
-    });
+    return this.createAndUpdateTokens(newUser.id);
   }
 
   async login(userDto: LoginUserDto): Promise<CredentialsToken> {
@@ -57,14 +51,11 @@ export class AuthService {
     if (!isValidPassword)
       throw new BadRequestException('Логин или пароль не верный');
 
-    return this.createAndUpdateTokens({
-      id: user.id,
-      role: user.role,
-    });
+    return this.createAndUpdateTokens(user.id);
   }
 
   async logout(userId: string) {
-    return this.updateRefreshToken(userId, null);
+    await this.cacheService.del(`refresh:${userId}`);
   }
 
   private async hashPassword(password: string): Promise<string> {
@@ -79,47 +70,43 @@ export class AuthService {
     return compare(password, hashPassword);
   }
 
-  async refreshToken(userId: string, refreshTokenDto: string) {
-    const { refreshToken, id, role } =
-      await this.userService.getUserProfile(userId);
+  async refreshToken(
+    userId: string,
+    refreshTokenDto: string,
+  ): Promise<CredentialsToken> {
+    const { id } = await this.userService.getUserById(userId);
 
-    if (!refreshToken || refreshToken !== refreshTokenDto)
+    const value = await this.cacheService.get<{ refreshToken: string }>(
+      `refresh:${userId}`,
+    );
+
+    if (!value || value.refreshToken !== refreshTokenDto)
       throw new ForbiddenException('Доступ запрещен');
 
-    return this.createAndUpdateTokens({
-      id,
-      role,
-    });
+    return this.createAndUpdateTokens(id);
   }
 
-  async createAndUpdateTokens(payload: IJWTPayload): Promise<CredentialsToken> {
-    const tokens = await this.getTokens(payload);
-
-    await this.updateRefreshToken(payload.id, tokens.refreshToken);
-
+  private async createAndUpdateTokens(
+    userId: string,
+  ): Promise<CredentialsToken> {
+    const tokens = await this.getTokens({ id: userId });
+    await this.cacheService.set<{ refreshToken: string }>(`refresh:${userId}`, {
+      refreshToken: tokens.refreshToken,
+    });
     return tokens;
-  }
-
-  async updateRefreshToken(userId: string, refreshToken: string | null) {
-    const [count] = await this.userService.update(userId, {
-      refreshToken: refreshToken,
-    });
-
-    if (!count)
-      throw new BadRequestException('Произошла ошибка при обновлении токена');
   }
 
   private async getTokens(payload: IJWTPayload): Promise<CredentialsToken> {
     const [accessToken, refreshToken] = await Promise.all([
       this.createToken(
         payload,
-        this.jwtAccessSecret,
-        this.jwtAccessExpirationTime,
+        appConfig.jwt.accessSecret,
+        appConfig.jwt.accessExpirationTime,
       ),
       this.createToken(
         payload,
-        this.jwtRefreshSecret,
-        this.jwtRefreshExpirationTime,
+        appConfig.jwt.refreshSecret,
+        appConfig.jwt.refreshExpirationTime,
       ),
     ]);
 
@@ -139,5 +126,24 @@ export class AuthService {
 
   async restorePassword() {}
 
-  async changePassword() {}
+  async changePassword(data: ChangePasswordDto, user: UserModel) {
+    const isValidPassword = await this.validatePassword(
+      data.password,
+      user.password,
+    );
+
+    if (!isValidPassword) throw new BadRequestException('Ошибка запроса');
+    const hash = await this.hashPassword(data.newPassword);
+    const [count] = await this.userService.update(user.id, {
+      password: hash,
+    });
+
+    if (count) {
+      return {
+        info: 'Пароль успешно изменен',
+      };
+    }
+
+    throw new BadRequestException('Ошибка запроса');
+  }
 }
