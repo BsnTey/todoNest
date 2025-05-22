@@ -1,6 +1,7 @@
 import { plainToInstance } from 'class-transformer';
 import { validateSync } from 'class-validator';
 import { config as readEnv } from 'dotenv';
+import * as process from 'node:process';
 import { AppConfigDto } from './dto';
 
 readEnv();
@@ -21,10 +22,13 @@ const rawConfig: EnvStructure<AppConfigDto> = {
     database: process.env.POSTGRES_DB,
   },
   jwt: {
-    jwtAccessSecret: process.env.JWT_ACCESS_SECRET,
-    jwtRefreshSecret: process.env.JWT_REFRESH_SECRET,
-    jwtAccessExpirationTime: process.env.JWT_ACCESS_EXPIRATION_TIME,
-    jwtRefreshExpirationTime: process.env.JWT_REFRESH_EXPIRATION_TIME,
+    accessSecret: process.env.JWT_ACCESS_SECRET,
+    refreshSecret: process.env.JWT_REFRESH_SECRET,
+    accessExpirationTime: process.env.JWT_ACCESS_EXPIRATION_TIME,
+    refreshExpirationTime: process.env.JWT_REFRESH_EXPIRATION_TIME,
+  },
+  redis: {
+    connectionUrl: process.env.REDIS_CONNECTION_URL,
   },
 };
 

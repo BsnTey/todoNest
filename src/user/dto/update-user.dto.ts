@@ -10,5 +10,5 @@ export class UpdateProfileDto {
   @ApiPropertyOptional({ example: '1990-01-01' })
   @IsDateString()
   @IsOptional()
-  birthday?: string;
+  birthday?: Date;
 }

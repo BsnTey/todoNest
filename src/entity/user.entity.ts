@@ -17,8 +17,7 @@ export interface UserCreationAttrs {
   name?: string;
   birthday?: Date;
   role: UserRole;
-  isBan: boolean;
-  refreshToken: string | null;
+  isActive: boolean;
 }
 
 @Table({ tableName: 'users' })
@@ -63,14 +62,7 @@ export class User extends Model {
     type: DataType.BOOLEAN,
     defaultValue: false,
   })
-  isBan: boolean;
-
-  @Column({
-    type: DataType.STRING,
-    allowNull: true,
-    defaultValue: null,
-  })
-  refreshToken: string | null;
+  isActive: boolean;
 
   @HasMany(() => Task, 'creatorId')
   createdTasks: Task[];
