@@ -1,4 +1,4 @@
-import { Provider } from '@nestjs/common';
+import { Logger, Provider } from '@nestjs/common';
 import { createClient } from 'redis';
 import { appConfig } from '../config';
 
@@ -11,8 +11,10 @@ export const redisProvider: Provider = {
       url: appConfig.redis.connectionUrl,
     });
 
+    const logger = new Logger('Redis Provider');
+
     client.on('error', (err) => {
-      console.error('Redis Client Error', err);
+      logger.error(err);
     });
 
     await client.connect();

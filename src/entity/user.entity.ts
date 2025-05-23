@@ -4,12 +4,14 @@ import {
   CreatedAt,
   DataType,
   HasMany,
+  HasOne,
   Model,
   Table,
   UpdatedAt,
 } from 'sequelize-typescript';
 import { UserRole } from '../common';
 import { Task } from './task.entity';
+import { TelegramUser } from './telegram-user.entity';
 
 export interface UserCreationAttrs {
   email: string;
@@ -17,7 +19,7 @@ export interface UserCreationAttrs {
   name?: string;
   birthday?: Date;
   role: UserRole;
-  isActive: boolean;
+  isActive?: boolean;
 }
 
 @Table({ tableName: 'users' })
@@ -60,15 +62,18 @@ export class User extends Model {
 
   @Column({
     type: DataType.BOOLEAN,
-    defaultValue: false,
+    defaultValue: true,
   })
-  isActive: boolean;
+  isActive: boolean = true;
 
   @HasMany(() => Task, 'creatorId')
   createdTasks: Task[];
 
   @HasMany(() => Task, 'assigneeId')
   assignedTasks: Task[];
+
+  @HasOne(() => TelegramUser)
+  telegramAccount: TelegramUser;
 
   @CreatedAt
   createdAt: Date;

@@ -2,6 +2,7 @@ import { Logger, Provider } from '@nestjs/common';
 import { Sequelize } from 'sequelize-typescript';
 import { appConfig } from '../config';
 import { Task } from '../entity/task.entity';
+import { TelegramUser } from '../entity/telegram-user.entity';
 import { User } from '../entity/user.entity';
 
 export const SEQUELIZE = 'SEQUELIZE';
@@ -13,7 +14,7 @@ export const sequelizeProvider: Provider<Sequelize> = {
       dialect: 'postgres',
       logging: false,
       ...appConfig.postgres,
-      models: [Task, User],
+      models: [Task, User, TelegramUser],
     });
 
     await sequelize.authenticate();

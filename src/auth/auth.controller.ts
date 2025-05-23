@@ -7,6 +7,8 @@ import {
   Res,
   UseGuards,
   UseInterceptors,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { FastifyReply } from 'fastify';
@@ -17,6 +19,7 @@ import { AuthService } from './auth.service';
 import { ChangePasswordDto, CreateUserDto, LoginUserDto } from './dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { AccessTokenGuard, RefreshTokenGuard } from './guard';
+import { NoTempEmailPipe } from './pipes';
 import { CredentialsToken } from './types/auth.interface';
 
 @ApiTags('auth')
@@ -25,6 +28,7 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @ApiOperation({ summary: 'Регистрация пользователя' })
+  @UsePipes(ValidationPipe, NoTempEmailPipe)
   @Post('register')
   @UseInterceptors(SetAuthTokensInterceptor)
   async register(@Body() user: CreateUserDto): Promise<CredentialsToken> {

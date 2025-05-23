@@ -7,7 +7,6 @@ export class BaseTaskQueryDto extends BasePaginationDto {
   @ApiPropertyOptional({
     description: 'Текстовый поиск по задачам',
     example: 'fix bug',
-    type: String,
   })
   @IsOptional()
   @IsString()
