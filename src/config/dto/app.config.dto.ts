@@ -3,7 +3,9 @@ import { IsInt, Max, Min } from 'class-validator';
 import { NestedConfigDto } from '../../decorators';
 import { JWTConfigDto } from './jwt.config.dto';
 import { PostgresConfigDto } from './postgres.config.dto';
+import { RabbitConfigDto } from './rabbit.config.dto';
 import { RedisConfigDto } from './redis.config.dto';
+import { TelegramConfigDto } from './telegram.config.dto';
 
 export class AppConfigDto {
   @Type(() => Number)
@@ -20,4 +22,10 @@ export class AppConfigDto {
 
   @NestedConfigDto(RedisConfigDto)
   readonly redis: RedisConfigDto;
+
+  @NestedConfigDto(RabbitConfigDto)
+  readonly rabbit: RabbitConfigDto;
+
+  @NestedConfigDto(TelegramConfigDto)
+  readonly telegram: TelegramConfigDto;
 }

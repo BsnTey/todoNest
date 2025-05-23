@@ -5,6 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { redisQueryTaskKey, redisTaskKey } from '../cache/cache.keys';
 import { CacheService } from '../cache/cache.service';
 import { convertModelToDto } from '../common/utils/convert-model-to-dto';
 import { Task, TaskCreationAttrs } from '../entity/task.entity';
@@ -21,9 +22,6 @@ import { TaskRepository } from './task.repository';
 @Injectable()
 export class TaskService {
   private readonly logger = new Logger(TaskService.name);
-
-  private readonly prefixTask = 'task:';
-  private readonly prefixTasks = 'tasks:';
 
   constructor(
     private taskRepository: TaskRepository,
@@ -64,7 +62,7 @@ export class TaskService {
     };
 
     const task = await this.taskRepository.create(newTaskData);
-    await this.cacheService.delByPrefix(this.prefixTasks);
+    await this.cacheService.delByPrefix(redisQueryTaskKey());
     this.logger.log(
       `Задача "${task.title}" с ID: ${task.id} создана пользователем ${creatorId}`,
     );
@@ -73,7 +71,7 @@ export class TaskService {
 
   async findAllWithFilters(query: TasksQueryDto): Promise<AllTasksResponseDto> {
     const queryString = JSON.stringify(query);
-    const cacheKey = `${this.prefixTasks + queryString}`;
+    const cacheKey = redisQueryTaskKey(queryString);
 
     const cached = await this.cacheService.get<AllTasksResponseDto>(cacheKey);
     if (cached) {
@@ -115,7 +113,7 @@ export class TaskService {
   }
 
   async findTask(id: string): Promise<Task | null> {
-    const cached = await this.cacheService.get<Task>(`${this.prefixTask + id}`);
+    const cached = await this.cacheService.get<Task>(redisTaskKey(id));
     if (cached) {
       this.logger.log(`Взятие кеша задания с ID: ${id}`);
       return cached;
@@ -124,7 +122,7 @@ export class TaskService {
     const task = await this.taskRepository.findById(id);
     if (task) {
       this.logger.log(`Установка в кеш задания с ID: ${id}`);
-      await this.cacheService.set<Task>(`${this.prefixTask + id}`, task);
+      await this.cacheService.set<Task>(redisTaskKey(id), task);
       return task;
     }
     this.logger.log(`Задание с ID не найдено: ${id}`);
@@ -173,8 +171,10 @@ export class TaskService {
 
     const [count, [updated]] = await this.taskRepository.update(id, taskDto);
     if (count) {
-      await this.cacheService.delByPrefix(this.prefixTasks);
-      await this.cacheService.del(`${this.prefixTask + id}`);
+      await Promise.all([
+        this.cacheService.delByPrefix(redisQueryTaskKey()),
+        this.cacheService.del(redisTaskKey(id)),
+      ]);
     }
     return count ? updated : null;
   }
@@ -189,8 +189,10 @@ export class TaskService {
     this.logger.log(`Удаление задачи с ID: ${id}`);
     const deletedCount = await this.taskRepository.delete(id);
     if (deletedCount) {
-      await this.cacheService.delByPrefix(this.prefixTasks);
-      await this.cacheService.del(`${this.prefixTask + id}`);
+      await Promise.all([
+        this.cacheService.delByPrefix(redisQueryTaskKey()),
+        this.cacheService.del(redisTaskKey(id)),
+      ]);
     }
     return Boolean(deletedCount);
   }

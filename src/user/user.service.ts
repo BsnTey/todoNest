@@ -1,7 +1,12 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ChannelWrapper } from 'amqp-connection-manager';
+import { RABBIT_MQ } from '../broker/broker.provider';
+import { RABBIT_MQ_QUEUES } from '../broker/rabbitmq.queues';
+import { redisUserKey, redisUserLinkKey } from '../cache/cache.keys';
 import { CacheService } from '../cache/cache.service';
 import { OptionalUser } from '../common/types/user.interface';
 import { convertModelToDto } from '../common/utils/convert-model-to-dto';
+import { appConfig } from '../config';
 import { User, UserCreationAttrs } from '../entity/user.entity';
 import { BasePaginationDto } from '../task/dto';
 import {
@@ -14,15 +19,23 @@ import { UserRepository } from './user.repository';
 @Injectable()
 export class UserService {
   private readonly logger = new Logger(UserService.name);
-  private readonly prefixUser = 'user:';
 
   constructor(
     private userRepository: UserRepository,
     private readonly cacheService: CacheService,
+    @Inject(RABBIT_MQ) private readonly channel: ChannelWrapper,
   ) {}
 
   async create(createUser: UserCreationAttrs): Promise<User> {
-    return this.userRepository.create(createUser);
+    const user = await this.userRepository.create(createUser);
+
+    await this.channel.sendToQueue(
+      RABBIT_MQ_QUEUES.NEW_REGISTRATION_QUEUE,
+      JSON.stringify(convertModelToDto(UserProfileResponseDto, user)),
+    );
+
+    this.logger.log(`Пользователь ${user.id} создан`);
+    return user;
   }
 
   async blockUser(id: string): Promise<boolean> {
@@ -47,9 +60,7 @@ export class UserService {
 
   async findById(userId: string): Promise<User | null> {
     this.logger.log(`Поиск пользователя с ID: ${userId}`);
-    const cached = await this.cacheService.get<User>(
-      `${this.prefixUser + userId}`,
-    );
+    const cached = await this.cacheService.get<User>(redisUserKey(userId));
     if (cached) {
       this.logger.log(`Получение пользователя из кеша с ID: ${userId}`);
       return cached;
@@ -58,7 +69,7 @@ export class UserService {
     const user = await this.userRepository.findById(userId);
     if (user) {
       this.logger.log(`Установка в кеш пользователя с ID: ${userId}`);
-      await this.cacheService.set<User>(`${this.prefixUser + userId}`, user);
+      await this.cacheService.set<User>(redisUserKey(userId), user);
       return user;
     }
     this.logger.log(`Не найден пользователь с ID: ${userId}`);
@@ -82,9 +93,15 @@ export class UserService {
     return user;
   }
 
-  async getTelegramLink(): Promise<string> {
+  async getTelegramLink(userId: string): Promise<{ link: string }> {
     this.logger.log(`Запрос телеграм ссылки`);
-    return 'https://t.me/xxxx';
+
+    const key = crypto.randomUUID();
+    await this.cacheService.set(redisUserLinkKey(key), { userId }, 86_400);
+
+    const userNameBot = appConfig.telegram.userNameBot;
+
+    return { link: `https://t.me/${userNameBot}?start=${key}` };
   }
 
   async update(
@@ -96,7 +113,7 @@ export class UserService {
       userId,
       updateUser,
     );
-    if (count) await this.cacheService.del(`${this.prefixUser + userId}`);
+    if (count) await this.cacheService.del(redisUserKey(userId));
     return [count, updatedUser];
   }
 

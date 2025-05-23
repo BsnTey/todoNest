@@ -20,19 +20,22 @@ export class SetAuthTokensInterceptor implements NestInterceptor {
     return next.handle().pipe(
       tap((tokens: CredentialsToken) => {
         if (tokens.accessToken && tokens.refreshToken) {
-          response.header('Authorization', `Bearer ${tokens.accessToken}`);
           response.setCookie('refreshToken', tokens.refreshToken, {
             httpOnly: true,
             secure: true,
             sameSite: 'lax',
-            path: '/',
+            path: '/auth/refresh',
             maxAge: Math.floor(
               ms(appConfig.jwt.refreshExpirationTime as StringValue) / 1000,
             ),
           });
         }
       }),
-      map(() => {}),
+      map((tokens) => {
+        return {
+          accessToken: tokens.accessToken,
+        };
+      }),
     );
   }
 }

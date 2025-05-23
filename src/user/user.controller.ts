@@ -73,8 +73,10 @@ export class UserController {
     summary: 'Получить ссылку на Telegram текущего пользователя',
   })
   @Get('profile/telegram-link')
-  async getTelegramLink(): Promise<string> {
-    return this.userService.getTelegramLink();
+  async getTelegramLink(
+    @User() userModel: UserModel,
+  ): Promise<{ link: string }> {
+    return this.userService.getTelegramLink(userModel.id);
   }
 
   @ApiOperation({ summary: 'Обновить профиль пользователя' })

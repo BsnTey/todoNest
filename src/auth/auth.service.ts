@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { compare, genSalt, hash } from 'bcrypt';
+import { redisRefreshKey } from '../cache/cache.keys';
 import { CacheService } from '../cache/cache.service';
 import { UserRole } from '../common';
 import { appConfig } from '../config';
@@ -33,7 +34,6 @@ export class AuthService {
       ...createUserDto,
       password: hash,
       role,
-      isActive: true,
     });
 
     return this.createAndUpdateTokens(newUser.id);
@@ -55,7 +55,7 @@ export class AuthService {
   }
 
   async logout(userId: string) {
-    await this.cacheService.del(`refresh:${userId}`);
+    await this.cacheService.del(redisRefreshKey(userId));
   }
 
   private async hashPassword(password: string): Promise<string> {
@@ -77,7 +77,7 @@ export class AuthService {
     const { id } = await this.userService.getUserById(userId);
 
     const value = await this.cacheService.get<{ refreshToken: string }>(
-      `refresh:${userId}`,
+      redisRefreshKey(userId),
     );
 
     if (!value || value.refreshToken !== refreshTokenDto)
@@ -90,9 +90,12 @@ export class AuthService {
     userId: string,
   ): Promise<CredentialsToken> {
     const tokens = await this.getTokens({ id: userId });
-    await this.cacheService.set<{ refreshToken: string }>(`refresh:${userId}`, {
-      refreshToken: tokens.refreshToken,
-    });
+    await this.cacheService.set<{ refreshToken: string }>(
+      redisRefreshKey(userId),
+      {
+        refreshToken: tokens.refreshToken,
+      },
+    );
     return tokens;
   }
 
