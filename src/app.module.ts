@@ -12,6 +12,7 @@ import { TaskModule } from './task/task.module';
 import { getTelegramConfig } from './telegram/telegram.config';
 import { TelegramModule } from './telegram/telegram.module';
 import { UserModule } from './user/user.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { UserModule } from './user/user.module';
     HttpModule,
     ScheduleModule.forRoot(),
     LoginEventsModule,
+    MailModule,
   ],
 })
 export class AppModule {}

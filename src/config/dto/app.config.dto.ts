@@ -5,6 +5,7 @@ import { JWTConfigDto } from './jwt.config.dto';
 import { PostgresConfigDto } from './postgres.config.dto';
 import { RabbitConfigDto } from './rabbit.config.dto';
 import { RedisConfigDto } from './redis.config.dto';
+import { SmtpConfigDto } from './smtp.config.dto';
 import { TelegramConfigDto } from './telegram.config.dto';
 
 export class AppConfigDto {
@@ -28,4 +29,7 @@ export class AppConfigDto {
 
   @NestedConfigDto(TelegramConfigDto)
   readonly telegram: TelegramConfigDto;
+
+  @NestedConfigDto(SmtpConfigDto)
+  readonly smtp: SmtpConfigDto;
 }
