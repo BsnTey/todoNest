@@ -41,14 +41,6 @@ export class UserRepository {
   async getAll(
     query: BasePaginationDto,
   ): Promise<{ count: number; rows: User[] }> {
-    const { limit = 100, offset = 0, ...rest } = query;
-
-    const options = {
-      limit,
-      offset,
-      ...rest,
-    };
-
-    return this.userModel.findAndCountAll(options);
+    return this.userModel.findAndCountAll(query);
   }
 }

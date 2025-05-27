@@ -1,7 +1,6 @@
 import { plainToInstance } from 'class-transformer';
 import { validateSync } from 'class-validator';
 import { config as readEnv } from 'dotenv';
-import * as process from 'node:process';
 import { AppConfigDto } from './dto';
 
 readEnv();
@@ -29,6 +28,14 @@ const rawConfig: EnvStructure<AppConfigDto> = {
   },
   redis: {
     connectionUrl: process.env.REDIS_CONNECTION_URL,
+  },
+  rabbit: {
+    connectionUrl: process.env.RABBITMQ_CONNECTION_URL,
+  },
+  telegram: {
+    tokenBot: process.env.TELEGRAM_TOKEN_BOT,
+    userNameBot: process.env.TELEGRAM_USERNAME_BOT,
+    admin: process.env.TELEGRAM_ADMIN_ID,
   },
 };
 
