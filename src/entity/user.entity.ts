@@ -10,6 +10,7 @@ import {
   UpdatedAt,
 } from 'sequelize-typescript';
 import { UserRole } from '../common';
+import { LoginEvent } from './login-event.entity';
 import { Task } from './task.entity';
 import { TelegramUser } from './telegram-user.entity';
 
@@ -64,13 +65,16 @@ export class User extends Model {
     type: DataType.BOOLEAN,
     defaultValue: true,
   })
-  isActive: boolean = true;
+  isActive: boolean;
 
   @HasMany(() => Task, 'creatorId')
   createdTasks: Task[];
 
   @HasMany(() => Task, 'assigneeId')
   assignedTasks: Task[];
+
+  @HasMany(() => LoginEvent, 'userId')
+  loginEvents: LoginEvent[];
 
   @HasOne(() => TelegramUser)
   telegramAccount: TelegramUser;

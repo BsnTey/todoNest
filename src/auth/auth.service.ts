@@ -10,6 +10,8 @@ import { CacheService } from '../cache/cache.service';
 import { UserRole } from '../common';
 import { appConfig } from '../config';
 import { User as UserModel } from '../entity/user.entity';
+import { LoginEventDto } from '../login-events/dto/login-event.dto';
+import { LoginEventsService } from '../login-events/login-events.service';
 import { UserService } from '../user/user.service';
 import { ChangePasswordDto, CreateUserDto, LoginUserDto } from './dto';
 import { CredentialsToken, IJWTPayload } from './types/auth.interface';
@@ -20,6 +22,7 @@ export class AuthService {
     private userService: UserService,
     private jwtService: JwtService,
     private readonly cacheService: CacheService,
+    private readonly loginEventsService: LoginEventsService,
   ) {}
 
   async register(
@@ -39,19 +42,39 @@ export class AuthService {
     return this.createAndUpdateTokens(newUser.id);
   }
 
-  async login(userDto: LoginUserDto): Promise<CredentialsToken> {
+  async login(userDto: LoginUserDto, ip: string): Promise<CredentialsToken> {
     const user = await this.userService.findByEmail(userDto.email);
-    if (!user) throw new BadRequestException('Логин или пароль не верный');
+    if (!user) {
+      await this.loginCachingEvent(ip, false, null);
+      throw new BadRequestException('Логин или пароль не верный');
+    }
 
     const isValidPassword = await this.validatePassword(
       userDto.password,
       user.password,
     );
 
-    if (!isValidPassword)
+    if (!isValidPassword) {
+      await this.loginCachingEvent(ip, false, user.id);
       throw new BadRequestException('Логин или пароль не верный');
+    }
 
+    await this.loginCachingEvent(ip, true, user.id);
     return this.createAndUpdateTokens(user.id);
+  }
+
+  private async loginCachingEvent(
+    ip: string,
+    status: boolean,
+    userId: string | null,
+  ) {
+    return this.loginEventsService.cachingEvent(
+      new LoginEventDto({
+        ip,
+        status,
+        userId,
+      }),
+    );
   }
 
   async logout(userId: string) {

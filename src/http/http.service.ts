@@ -1,16 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 
 @Injectable()
 export class HttpService {
   private readonly logger = new Logger(HttpService.name);
-  private readonly httpClient: AxiosInstance;
-
-  constructor() {
-    this.httpClient = axios.create({
-      timeout: 5000,
-    });
-  }
+  private readonly httpClient = axios.create({ timeout: 5000 });
 
   async get<T>(
     url: string,
