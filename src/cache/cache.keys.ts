@@ -6,6 +6,10 @@ export const redisUserKey = (userId: string) => {
   return `user:${userId}`;
 };
 
+export const redisRestorePasswordKey = (key: string) => {
+  return `restorePassword:${key}`;
+};
+
 export const redisUserLinkKey = (key: string) => {
   return `userLink:${key}`;
 };
