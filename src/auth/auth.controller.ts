@@ -4,6 +4,7 @@ import {
   HttpCode,
   Post,
   Put,
+  Req,
   Res,
   UseGuards,
   UseInterceptors,
@@ -11,7 +12,7 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { FastifyReply } from 'fastify';
+import { FastifyReply, FastifyRequest } from 'fastify';
 import { User } from '../decorators/user.decorator';
 import { User as UserModel } from '../entity/user.entity';
 import { SetAuthTokensInterceptor } from '../Interceptors';
@@ -39,8 +40,11 @@ export class AuthController {
   @Post('login')
   @UseInterceptors(SetAuthTokensInterceptor)
   @HttpCode(200)
-  async login(@Body() user: LoginUserDto): Promise<CredentialsToken> {
-    return this.authService.login(user);
+  async login(
+    @Body() user: LoginUserDto,
+    @Req() req: FastifyRequest,
+  ): Promise<CredentialsToken> {
+    return this.authService.login(user, req.ip);
   }
 
   @ApiOperation({ summary: 'Выход пользователя' })

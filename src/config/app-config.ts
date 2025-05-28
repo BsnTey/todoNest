@@ -37,6 +37,10 @@ const rawConfig: EnvStructure<AppConfigDto> = {
     userNameBot: process.env.TELEGRAM_USERNAME_BOT,
     admin: process.env.TELEGRAM_ADMIN_ID,
   },
+  smtp: {
+    user: process.env.SMTP_YANDEX_USER,
+    password: process.env.SMTP_YANDEX_PASS,
+  },
 };
 
 export const appConfig = plainToInstance(AppConfigDto, rawConfig);

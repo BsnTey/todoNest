@@ -26,6 +26,14 @@ export class CacheService {
     await this.client.del(key);
   }
 
+  async lpush(key: string, value: string) {
+    return this.client.lPush(key, value);
+  }
+
+  async rpop(key: string): Promise<string | null> {
+    return this.client.rPop(key);
+  }
+
   async delByPrefix(prefix: string): Promise<void> {
     const keys = await this.client.keys(`${prefix}*`);
     if (keys.length > 0) {

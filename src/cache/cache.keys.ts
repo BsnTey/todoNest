@@ -21,3 +21,7 @@ export const redisQueryTaskKey = (query?: string) => {
 export const redisTempMailKey = (key: string) => {
   return `tmpMail:${key}`;
 };
+
+export const redisLoginEventKey = () => {
+  return `tmpLoginEvent`;
+};

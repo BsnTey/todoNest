@@ -7,10 +7,12 @@ import { CacheModule } from './cache/cache.module';
 import { CronModule } from './cron/cron.module';
 import { DatabaseModule } from './database';
 import { HttpModule } from './http/http.module';
+import { LoginEventsModule } from './login-events/login-events.module';
 import { TaskModule } from './task/task.module';
 import { getTelegramConfig } from './telegram/telegram.config';
 import { TelegramModule } from './telegram/telegram.module';
 import { UserModule } from './user/user.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -25,6 +27,8 @@ import { UserModule } from './user/user.module';
     CronModule,
     HttpModule,
     ScheduleModule.forRoot(),
+    LoginEventsModule,
+    MailModule,
   ],
 })
 export class AppModule {}

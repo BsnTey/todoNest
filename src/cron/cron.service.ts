@@ -28,7 +28,7 @@ export class CronService implements OnModuleInit {
 
       await Promise.all(
         emails.map((email) =>
-          this.cacheService.set(redisTempMailKey(email), { email }, 86_400),
+          this.cacheService.set(redisTempMailKey(email), { email }, 4 * 86_400),
         ),
       );
       this.logger.log(`✅ Сохранено ${emails.length} временных почт в кэш`);
