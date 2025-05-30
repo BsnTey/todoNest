@@ -32,7 +32,9 @@ const bootstrap = async () => {
   bootstrapSwagger(app);
   bootstrapPipes(app);
 
-  await app.listen(appConfig.port);
+  const host = '0.0.0.0';
+
+  await app.listen(appConfig.port, host);
 
   const context = 'Bootstrap';
   logger.log(

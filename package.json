@@ -4,6 +4,7 @@
   "scripts": {
     "build": "nest build",
     "start": "nest start",
+    "start:prod": "node dist/main.js",
     "start:dev": "nest start --watch",
     "lint": "npx eslint ./src",
     "migrate": "sequelize-cli db:migrate"
