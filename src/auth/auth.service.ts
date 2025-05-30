@@ -5,15 +5,21 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { compare, genSalt, hash } from 'bcrypt';
-import { redisRefreshKey } from '../cache/cache.keys';
+import { redisRefreshKey, redisRestorePasswordKey } from '../cache/cache.keys';
 import { CacheService } from '../cache/cache.service';
 import { UserRole } from '../common';
 import { appConfig } from '../config';
 import { User as UserModel } from '../entity/user.entity';
 import { LoginEventDto } from '../login-events/dto/login-event.dto';
 import { LoginEventsService } from '../login-events/login-events.service';
+import { MailService } from '../mail/mail.service';
 import { UserService } from '../user/user.service';
-import { ChangePasswordDto, CreateUserDto, LoginUserDto } from './dto';
+import {
+  ChangePasswordDto,
+  ConfirmRestorePasswordDto,
+  CreateUserDto,
+  LoginUserDto,
+} from './dto';
 import { CredentialsToken, IJWTPayload } from './types/auth.interface';
 
 @Injectable()
@@ -23,6 +29,7 @@ export class AuthService {
     private jwtService: JwtService,
     private readonly cacheService: CacheService,
     private readonly loginEventsService: LoginEventsService,
+    private readonly mailService: MailService,
   ) {}
 
   async register(
@@ -150,7 +157,62 @@ export class AuthService {
     });
   }
 
-  async restorePassword() {}
+  async restorePassword(email: string) {
+    const user = await this.userService.findByEmail(email);
+    if (!user) return 'Код отправлен на почту';
+
+    const uuid = crypto.randomUUID();
+    await this.cacheService.set(
+      redisRestorePasswordKey(uuid),
+      {
+        userId: user.id,
+      },
+      3_600,
+    );
+
+    const text = `
+Здравствуйте!
+
+Вы запросили восстановление пароля для вашего аккаунта. Пожалуйста, используйте код ниже, чтобы сбросить пароль:
+
+${uuid}
+
+Если вы не запрашивали восстановление пароля, просто проигнорируйте это сообщение.
+`;
+
+    await this.mailService.sendEmail(email, 'Восстановление пароля', text);
+    return 'Код отправлен на почту';
+  }
+
+  async confirmRestorePassword(dto: ConfirmRestorePasswordDto) {
+    const user = await this.userService.findByEmail(dto.email);
+    if (!user)
+      throw new BadRequestException(
+        'Не верные данные или истек срок ключа подтверждения',
+      );
+
+    const value = await this.cacheService.get<{ userId: string }>(
+      redisRestorePasswordKey(dto.restoreToken),
+    );
+
+    if (!value || value.userId !== user.id)
+      throw new BadRequestException(
+        'Не верные данные или истек срок ключа подтверждения',
+      );
+
+    const hash = await this.hashPassword(dto.password);
+    const [count] = await this.userService.update(user.id, {
+      password: hash,
+    });
+
+    if (count) {
+      await this.cacheService.del(redisRestorePasswordKey(dto.restoreToken));
+      return {
+        info: 'Пароль успешно изменен',
+      };
+    }
+    throw new BadRequestException('Ошибка запроса');
+  }
 
   async changePassword(data: ChangePasswordDto, user: UserModel) {
     const isValidPassword = await this.validatePassword(

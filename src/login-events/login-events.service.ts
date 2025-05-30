@@ -11,7 +11,7 @@ export class LoginEventsService {
 
   constructor(
     private readonly cacheService: CacheService,
-    private loginEventsRepository: LoginEventsRepository,
+    private readonly loginEventsRepository: LoginEventsRepository,
   ) {}
 
   async cachingEvent(event: LoginEventDto) {
